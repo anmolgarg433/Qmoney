@@ -3,6 +3,8 @@ package com.crio.warmup.stock.dto;
 
 import java.time.LocalDate;
 
+// import java.time.LocalDate;
+
 public class PortfolioTrade {
 
   public PortfolioTrade() {  }
@@ -57,5 +59,12 @@ public class PortfolioTrade {
     return tradeType;
   }
   //solution
+
+  @Override
+  public String toString() {
+    return "PortfolioTrade [purchaseDate=" + purchaseDate + ", quantity=" + quantity + ", symbol="
+        + symbol + ", tradeType=" + tradeType + "]";
+  }
+
 
 }
