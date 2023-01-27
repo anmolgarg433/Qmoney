@@ -5,6 +5,8 @@ import com.crio.warmup.stock.dto.*;
 import com.crio.warmup.stock.log.UncaughtExceptionHandler;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.introspect.AnnotatedAndMetadata;
+import com.crio.warmup.stock.portfolio.PortfolioManager;
+import com.crio.warmup.stock.portfolio.PortfolioManagerFactory;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import java.io.File;
 import java.io.IOException;
@@ -17,7 +19,6 @@ import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
@@ -30,8 +31,13 @@ import org.springframework.web.client.RestTemplate;
 
 public class PortfolioManagerApplication {
 
+  
+  public static RestTemplate restTemplate = new RestTemplate();
+  public static PortfolioManager portfolioManager = PortfolioManagerFactory.getPortfolioManager(restTemplate);
+  private static ObjectMapper objectMapper;
+
   public static List<String> mainReadFile(String[] args) throws IOException, URISyntaxException {
-    
+
     File profile = resolveFileFromResources(args[0]);
     ObjectMapper objectMapper = getObjectMapper();
     PortfolioTrade[] portfolioTrade = objectMapper.readValue(profile, PortfolioTrade[].class);
@@ -176,7 +182,6 @@ public class PortfolioManagerApplication {
 
   public static List<Candle> fetchCandles(PortfolioTrade trade, LocalDate endDate, String token) {
     RestTemplate restTemplate = new RestTemplate();
-     ObjectMapper mapper = getObjectMapper();
       String url = prepareUrl(trade, endDate, token);
       TiingoCandle[] fetchedResult = restTemplate.getForObject(url, TiingoCandle[].class);
      
@@ -188,7 +193,6 @@ public class PortfolioManagerApplication {
       LocalDate endDate = LocalDate.parse(args[1]);
       List<AnnualizedReturn> annualizedReturns = new ArrayList<>();
       List<PortfolioTrade> trades = readTradesFromJson(args[0]);
-      ObjectMapper mapper = getObjectMapper();
       for(int i=0;i<trades.size();i++){
         List<Candle> candles=fetchCandles(trades.get(i), endDate, getToken());
         annualizedReturns.add(calculateAnnualizedReturns(endDate, trades.get(i), getOpeningPriceOnStartDate(candles), getClosingPriceOnEndDate(candles)));
@@ -217,6 +221,41 @@ public class PortfolioManagerApplication {
       double numYears = ChronoUnit.DAYS.between(trade.getPurchaseDate(), endDate)/365.24;
       double annualizedReturns = Math.pow((1 + totalReturn) , (1 / numYears)) - 1;
       return new AnnualizedReturn(trade.getSymbol(), annualizedReturns, totalReturn);
+      }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  // TODO: CRIO_TASK_MODULE_REFACTOR
+  //  Once you are done with the implementation inside PortfolioManagerImpl and
+  //  PortfolioManagerFactory, create PortfolioManager using PortfolioManagerFactory.
+  //  Refer to the code from previous modules to get the List<PortfolioTrades> and endDate, and
+  //  call the newly implemented method in PortfolioManager to calculate the annualized returns.
+
+  // Note:
+  // Remember to confirm that you are getting same results for annualized returns as in Module 3.
+
+  public static List<AnnualizedReturn> mainCalculateReturnsAfterRefactor(String[] args)
+      throws Exception {
+       String file = args[0];
+       LocalDate endDate = LocalDate.parse(args[1]);
+       File contents = resolveFileFromResources(file);
+       ObjectMapper objectMapper = getObjectMapper();
+       PortfolioTrade[] portfolioTrades = objectMapper.readValue(contents,PortfolioTrade[].class);
+       return portfolioManager.calculateAnnualizedReturn(Arrays.asList(portfolioTrades), endDate);
   }
 
 
@@ -226,7 +265,7 @@ public class PortfolioManagerApplication {
     printJsonObject(mainReadFile(args));
     printJsonObject(mainReadQuotes(args));
     printJsonObject(mainCalculateSingleReturn(args));
-
+    printJsonObject(mainCalculateReturnsAfterRefactor(args));
   }
 }
 
